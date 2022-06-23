@@ -1,24 +1,35 @@
-var express = require('express')
-var app = express()
-var morgan = require('morgan')
-app.use(morgan("dev"));
-const {db} = require('./models');
+const express = require("express");
+const app = express();
+const morgan = require("morgan");
+const { db, Page, User } = require("./models");
+const userRouter = require("./routes/users");
+const wikiRouter = require("./routes/wiki");
 
-db.authenticate()
-    .then(() => {
-        console.log('connected to the database');
-    })
+app.use(morgan("dev"));
+db.authenticate().then(() => {
+  console.log("connected to the database");
+});
 
 app.use(express.static(__dirname + "/public"));
 
-app.use(express.urlencoded({extended:false}));
+app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => {
-    res.send('Hello World');
-  });
+app.use("/wiki", wikiRouter);
+app.use("/user", userRouter);
+
+app.get("/", (req, res) => {
+  res.redirect("/wiki");
+});
 
 const PORT = 3300;
 
-app.listen(PORT, () => {
-    console.log(`App listening in port ${PORT}`);
-});
+const init = async () => {
+  await db.sync({ force: true });
+
+  // make sure that you have a PORT constant
+  await app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}!`);
+  });
+};
+
+init();
